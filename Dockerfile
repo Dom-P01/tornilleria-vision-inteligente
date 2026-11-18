@@ -11,11 +11,22 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Instalar PyTorch en variante CPU para reducir el peso de la imagen (~2 GB menos)
+# Librerías del sistema requeridas por OpenCV en Linux slim (resuelve libxcb.so.1 y libGL.so.1)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libgl1 \
+        libglib2.0-0 \
+        libxcb1 \
+        libx11-6 \
+        libxext6 \
+        libxrender1 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Instalación de PyTorch en variante CPU para reducir el peso de la imagen (~2 GB menos)
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
-# Instalar dependencias de producción del microservicio
+# Instalación de dependencias de producción del microservicio
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -23,7 +34,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY models/ ./models/
 
-# Crear usuario sin privilegios de administrador por seguridad operativa
+# Creación de usuario sin privilegios de administrador por seguridad operativa
 RUN useradd --create-home --shell /bin/bash appuser && \
     chown -R appuser:appuser /app
 USER appuser
